@@ -58,13 +58,15 @@
   font-style: italic;
 }
 
+@font-face {
+  font-family: 'Sanskrit';
+  src: url('../fonts/Sanskrit2003.ttf') format('truetype');
+}
 
 body {
   background-color: #eee;
-  font-family: "Sanskrit 2003", serif;
+  font-family: "Sanskrit", serif;
 }
-
-
 
 
 .footer {

@@ -11,17 +11,23 @@
    <link rel="stylesheet" href="css/foundation.css">
    <link rel="stylesheet" href="css/app.css">
 
+
    <script src="js/sans.js" defer></script>
    <script>
       var inputType = "itrans";
       var indicType = "devanagari";
       var romanType = "iast";
+      var doubleSpace = "yes";
 
 
       async function processInput() {
          const input = document.getElementById('textInput').value;
          var indicOutput = Sanscript.t(input.replaceAll("-",""), inputType, indicType).trim();
          var romanOutput = Sanscript.t(input, inputType, romanType).trim()
+         //doubleSpace = document.getElementById('doubleSpace').value;
+         //if(doubleSpace === "yes") {
+            //romanOutput = romanOutput.replaceAll(" ", "  ");
+         //}
          document.getElementById('devanagariOutput').innerText = indicOutput;
          document.getElementById('transOutput').innerText = romanOutput;
          document.getElementById('combinedOutput').innerText = combineText(indicOutput, romanOutput);
@@ -40,63 +46,63 @@
 
       function combineText(set1, set2) {
              // Split each set by newline to get arrays of lines
-        const lines1 = set1.split('\n\n');
-        const lines2 = set2.split('\n\n');
+       const lines1 = set1.split('\n\n');
+       const lines2 = set2.split('\n\n');
 
              // Determine the maximum number of lines to account for unequal lengths
-        const maxLength = Math.max(lines1.length, lines2.length);
+       const maxLength = Math.max(lines1.length, lines2.length);
 
              // Combine lines from both arrays
-        const combinedLines = [];
-        for (let i = 0; i < maxLength; i++) {
+       const combinedLines = [];
+       for (let i = 0; i < maxLength; i++) {
                  // Get line from each set, or an empty string if one set is shorter
-          const line1 = lines1[i] || "";
-          const line2 = lines2[i] || "";
+        const line1 = lines1[i] || "";
+        const line2 = lines2[i] || "";
 
                  // Combine the lines with a space or any desired separator
-          combinedLines.push(line1 + "\n" + line2);
-       }
+        combinedLines.push(line1 + "\n" + line2);
+     }
 
              // Join the combined lines back into a single string with newlines
-       return combinedLines.join('\n\n');
-    }
+     return combinedLines.join('\n\n');
+  }
 
-    function sideBySide(set1, set2) {
+  function sideBySide(set1, set2) {
              // Split each set by newline to get arrays of lines
-     const lines1 = set1.split('\n');
-     const lines2 = set2.split('\n');
+    const lines1 = set1.split('\n');
+    const lines2 = set2.split('\n');
 
              // Determine the maximum number of lines to account for unequal lengths
-     const maxLength = Math.max(lines1.length, lines2.length);
+    const maxLength = Math.max(lines1.length, lines2.length);
 
              // Combine lines from both arrays
-     const combinedLines = [];
-     for (let i = 0; i < maxLength; i++) {
+    const combinedLines = [];
+    for (let i = 0; i < maxLength; i++) {
                  // Get line from each set, or an empty string if one set is shorter
-       const line1 = lines1[i] || "";
-       const line2 = lines2[i] || "";
+     const line1 = lines1[i] || "";
+     const line2 = lines2[i] || "";
 
                  // Combine the lines with a space or any desired separator
-       combinedLines.push(line1 + "\t" + line2);
-    }
+     combinedLines.push(line1 + "\t" + line2);
+  }
 
              // Join the combined lines back into a single string with newlines
-    return combinedLines.join('\n');
- }
+  return combinedLines.join('\n');
+}
 
-    function displayType () {
-      document.getElementById('sideBySide').style.display = 'none';
-      document.getElementById('devanagariOutput').style.display = 'none';
-            document.getElementById('transOutput').style.display = 'none';
-      document.getElementById('combinedOutput').style.display = 'none';
-      const input = document.getElementById('displayType').value;
-      if(input === "double") {
-         document.getElementById('devanagariOutput').style.display = "block";
-         document.getElementById('transOutput').style.display = "block";
-      }
-
-      document.getElementById(input).style.display = "block";
+function displayType () {
+   document.getElementById('sideBySide').style.display = 'none';
+   document.getElementById('devanagariOutput').style.display = 'none';
+   document.getElementById('transOutput').style.display = 'none';
+   document.getElementById('combinedOutput').style.display = 'none';
+   const input = document.getElementById('displayType').value;
+   if(input === "double") {
+      document.getElementById('devanagariOutput').style.display = "block";
+      document.getElementById('transOutput').style.display = "block";
    }
+
+   document.getElementById(input).style.display = "block";
+}
 </script>
 </head>
 <body>
@@ -125,7 +131,6 @@
             <div class="large-4 medium-4 transliteration cell data-equalizer-watch">
                Indic Output
                <select id="indicOutput" onchange="updateVariable()">
-
                   <option value="devanagari" selected="selected">Devanagari (अ)</option>
                   <option value="bengali">Bengali (অ)</option>
                   <option value="gurmukhi">Gurmukhi (ਅ)</option>
@@ -146,28 +151,38 @@
                   </select>
                </div>
 
-                  <div class="large-4 medium-4 transliteration cell data-equalizer-watch">
-                     Display Style
-                     <select id="displayType" onchange="displayType()">
-                        <option value="double" selected="selected">Side by Side</option>
-                        <option value="combinedOutput">Combined</option>
-                        <option value="sideBySide">Word Copy and Paste</option></select>
-                     </div>
-                     <div class="large-6 medium-6 devanagari cell data-equalizer-watch">
-                        <div class="callout" id="devanagariOutput"> अत्र संस्कृतं </div>
-                     </div>
+               <div class="large-4 medium-4 transliteration cell data-equalizer-watch">
+                  Display Style
+                  <select id="displayType" onchange="displayType()">
+                     <option value="double" selected="selected">Side by Side</option>
+                     <option value="combinedOutput">Combined</option>
+                     <option value="sideBySide">Word Copy and Paste</option>
+                  </select>
+               </div>
 
-                     <div class="large-6 medium-6 devanagari cell data-equalizer-watch">
-                        <div class="callout" id="transOutput">Transliteration Here</div>
-                     </div>
-              
-                  <div class="large-12 medium-12 devanagari cell data-equalizer-watch">
-                     <div class="callout" id="combinedOutput" style="display:none">One After The Other</div>
-                  </div>
+               <!--<div class="large-3 medium-3 transliteration cell data-equalizer-watch">
+                  Double Space
+                  <select id="doubleSpace">
+                     <option value="yes" selected="selected">Double Space</option>
+                     <option value="no">Single Space</option>
+                  </select>
+               </div>-->
 
-                  <div class="large-12 medium-12  devanagari cell data-equalizer-watch">
-                     <div class="callout" id="sideBySide" style="display:none">Word Copy and Paste</div>
-                  </div>
+               <div class="large-6 medium-6 devanagari cell data-equalizer-watch">
+                  <div class="callout" id="devanagariOutput"> अत्र संस्कृतं </div>
+               </div>
+
+               <div class="large-6 medium-6 devanagari cell data-equalizer-watch">
+                  <div class="callout" id="transOutput">Transliteration Here</div>
+               </div>
+
+               <div class="large-12 medium-12 devanagari cell data-equalizer-watch">
+                  <div class="callout" id="combinedOutput" style="display:none">One After The Other</div>
+               </div>
+
+               <div class="large-12 medium-12  devanagari cell data-equalizer-watch">
+                  <div class="callout" id="sideBySide" style="display:none">Word Copy and Paste</div>
+               </div>
                </div>
             </div>
             <script src="js/vendor/jquery.js"></script>
