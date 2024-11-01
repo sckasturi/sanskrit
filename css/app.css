@@ -1,0 +1,105 @@
+.pt-serif-regular {
+  font-family: "PT Serif", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.pt-serif-bold {
+  font-family: "PT Serif", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.pt-serif-regular-italic {
+  font-family: "PT Serif", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.pt-serif-bold-italic {
+  font-family: "PT Serif", serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.pt-sans-narrow-regular {
+  font-family: "PT Sans Narrow", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.pt-sans-narrow-bold {
+  font-family: "PT Sans Narrow", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.pt-sans-regular {
+  font-family: "PT Sans", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.pt-sans-bold {
+  font-family: "PT Sans", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.pt-sans-regular-italic {
+  font-family: "PT Sans", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.pt-sans-bold-italic {
+  font-family: "PT Sans", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+
+body {
+  background-color: #eee;
+  font-family: "Sanskrit 2003", serif;
+}
+
+
+
+
+.footer {
+  text-align:center;
+  color:#ffffff;
+  background-color:#333333;
+  font-weight:600;
+}
+
+
+
+h1 {
+  text-transform: uppercase;
+}
+
+textarea {
+  font-size: 20pt;
+}
+
+.devanagari {
+  font-size: 20pt;
+}
+
+.transliteration {
+  font-size: 16pt;
+}
+
+.topHeader {
+  background-color:#333333;
+  padding:80px 0 0 0;
+  color: #fff;
+}
+
+.top-bar, .title-bar, .dropdown.menu, .is-dropdown-submenu {
+  background-color: #add8e6;
+  color: white;
+}
+
