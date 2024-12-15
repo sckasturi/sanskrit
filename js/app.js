@@ -91,43 +91,55 @@ function displayType() {
 async function copyText(divId) {
     // Select the text from the div
     const div = document.getElementById(divId);
-    const textToCopy = div.outerHTML;
+    const textToCopy = div.innerHTML;
     console.log(div.innerHTML);
-    console.log(div.outerHTML);
     var html = `<span style="font-family: Sanskrit2003; font-size: 16pt">${textToCopy}</span>`;
-    const clipboardItem = new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" })});
+    const clipboardItem = new ClipboardItem({
+        "text/html": new Blob([html], {
+            type: "text/html"
+        }),
+        "text/plain": new Blob([textToCopy], {
+            type: "text/plain"
+        })
+    });
     var parentDiv = div.parentNode;
 
     try {
-    await navigator.clipboard.write([clipboardItem]);
-    parentDiv.classList.add("success-callout");
-        setTimeout(function(){parentDiv.classList.remove("success-callout");}, 1000);
-    console.log(clipboardItem + "copied to clipboard!");
-  } catch (err) {
-    console.error("Error copying HTML:", err);
-  }
-    /*// Use the Clipboard API to copy the text
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        //alert('Text copied to clipboard!');
+        await navigator.clipboard.write([clipboardItem]);
         parentDiv.classList.add("success-callout");
-        setTimeout(function(){parentDiv.classList.remove("success-callout");}, 1000);
-    }).catch((err) => {
-        console.error('Failed to copy text: ', err);
-    });*/
+        setTimeout(function() {
+            parentDiv.classList.remove("success-callout");
+        }, 1000);
+        console.log(clipboardItem + "copied to clipboard!");
+    } catch (err) {
+        console.error("Error copying HTML:", err);
+    }
+    /*
+        // Use the Clipboard API to copy the text
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            //alert('Text copied to clipboard!');
+            parentDiv.classList.add("success-callout");
+            setTimeout(function(){parentDiv.classList.remove("success-callout");}, 1000);
+        }).catch((err) => {
+            console.error('Failed to copy text: ', err);
+        });*/
 }
 
 async function copyHTMLWithFormatting() {
-  const blob = new Blob([html], { type: "text/html" });
-  const clipboardItem = new ClipboardItem({ "text/html": blob });
+    const blob = new Blob([html], {
+        type: "text/html"
+    });
+    const clipboardItem = new ClipboardItem({
+        "text/html": blob
+    });
 
-  try {
-    await navigator.clipboard.write([clipboardItem]);
-    console.log("HTML copied to clipboard!");
-  } catch (err) {
-    console.error("Error copying HTML:", err);
-  }
+    try {
+        await navigator.clipboard.write([clipboardItem]);
+        console.log("HTML copied to clipboard!");
+    } catch (err) {
+        console.error("Error copying HTML:", err);
+    }
 }
 
 // Example usage
 // Call copyHTMLWithFormatting() when needed
-
