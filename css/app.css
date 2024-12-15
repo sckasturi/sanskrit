@@ -119,3 +119,22 @@ textarea {
     background-color: #add8e6;
     color: white;
 }
+
+.success-callout {
+  background-color: #fff; /* Initial color */
+  transition: background-color 1s ease-in-out;
+  animation: fadeBackground 1s; /* 3 seconds cycle, infinite loop */
+}
+
+/* Define the keyframes for the fade effect */
+@keyframes fadeBackground {
+  0% {
+    background-color: #fff; /* Start color */
+  }
+  50% {
+    background-color: rgb(230, 249, 235); /* Midway color */
+  }
+  100% {
+    background-color: #fff; /* End color (same as start) */
+  }
+}

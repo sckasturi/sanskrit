@@ -5,25 +5,25 @@ var doubleSpace = "yes";
 
 
 async function processInput() {
-    const input = document.getElementById('textInput').value;
+    const input = textInput.value;
     var indicOutput = Sanscript.t(input.replaceAll("-", ""), inputType, indicType).trim();
     var romanOutput = Sanscript.t(input, inputType, romanType).trim()
-    //doubleSpace = document.getElementById('doubleSpace').value;
+    //doubleSpace = doubleSpace.value;
     //if(doubleSpace === "yes") {
     //romanOutput = romanOutput.replaceAll(" ", "  ");
     //}
-    document.getElementById('devanagariOutput').innerText = indicOutput;
-    document.getElementById('transOutput').innerText = romanOutput;
-    document.getElementById('combinedOutput').innerText = combineText(indicOutput, romanOutput);
-    document.getElementById('sideBySide').innerText = sideBySide(indicOutput, romanOutput);
+    devanagariOutput.innerText = indicOutput;
+    transOutput.innerText = romanOutput;
+    combinedOutput.innerText = combineText(indicOutput, romanOutput);
+    sideBySide.innerText = sideBySide(indicOutput, romanOutput);
 }
 
 
 function updateVariable() {
-    inputType = document.getElementById('inputType').value;
-    indicType = document.getElementById('indicOutput').value;
-    romanType = document.getElementById('romanOutput').value;
-    //document.getElementById('romanOutType').innerText = romanOutput;
+    inputType = inputType.value;
+    indicType = indicOutput.value;
+    romanType = romanOutput.value;
+    //romanOutType.innerText = romanOutput;
 
     processInput();
 }
@@ -75,27 +75,59 @@ function sideBySide(set1, set2) {
 }
 
 function displayType() {
-    document.getElementById('sideBySideHide').style.display = 'none';
-    document.getElementById('devanagariOutputHide').style.display = 'none';
-    document.getElementById('transOutputHide').style.display = 'none';
-    document.getElementById('combinedOutputHide').style.display = 'none';
-    const input = document.getElementById('displayType').value;
+    sideBySideHide.style.display = 'none';
+    devanagariOutputHide.style.display = 'none';
+    transOutputHide.style.display = 'none';
+    combinedOutputHide.style.display = 'none';
+    const input = displayType.value;
     if (input === "double") {
-        document.getElementById('devanagariOutputHide').style.display = "block";
-        document.getElementById('transOutputHide').style.display = "block";
+        devanagariOutputHide.style.display = "block";
+        transOutputHide.style.display = "block";
     }
     console.log(input);
-    document.getElementById(input).style.display = "block";
+    input.style.display = "block";
 }
 
-function copyText(divId) {
+async function copyText(divId) {
     // Select the text from the div
-    const textToCopy = document.getElementById(divId).innerText;
+    const div = document.getElementById(divId);
+    const textToCopy = div.outerHTML;
+    console.log(div.innerHTML);
+    console.log(div.outerHTML);
+    var html = `<span style="font-family: Sanskrit2003; font-size: 16pt">${textToCopy}</span>`;
+    const clipboardItem = new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" })});
+    var parentDiv = div.parentNode;
 
-    // Use the Clipboard API to copy the text
+    try {
+    await navigator.clipboard.write([clipboardItem]);
+    parentDiv.classList.add("success-callout");
+        setTimeout(function(){parentDiv.classList.remove("success-callout");}, 1000);
+    console.log(clipboardItem + "copied to clipboard!");
+  } catch (err) {
+    console.error("Error copying HTML:", err);
+  }
+    /*// Use the Clipboard API to copy the text
     navigator.clipboard.writeText(textToCopy).then(() => {
-        // alert('Text copied to clipboard!');
+        //alert('Text copied to clipboard!');
+        parentDiv.classList.add("success-callout");
+        setTimeout(function(){parentDiv.classList.remove("success-callout");}, 1000);
     }).catch((err) => {
         console.error('Failed to copy text: ', err);
-    });
+    });*/
 }
+
+async function copyHTMLWithFormatting() {
+  const blob = new Blob([html], { type: "text/html" });
+  const clipboardItem = new ClipboardItem({ "text/html": blob });
+
+  try {
+    await navigator.clipboard.write([clipboardItem]);
+    console.log("HTML copied to clipboard!");
+  } catch (err) {
+    console.error("Error copying HTML:", err);
+  }
+}
+
+// Example usage
+// Call copyHTMLWithFormatting() when needed
+
