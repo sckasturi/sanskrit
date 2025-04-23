@@ -15,12 +15,12 @@ async function processInput() {
     devanagariOutput.innerText = indicOutput;
     transOutput.innerText = romanOutput;
     combinedOutput.innerText = combineText(indicOutput, romanOutput);
-    sideBySide.innerText = sideBySide(indicOutput, romanOutput);
+    sideBySid.innerText = sideBySide(indicOutput, romanOutput);
 }
 
 
 function updateVariable() {
-    inputType = inputType.value;
+    inputType = htmlInputType.value;
     indicType = indicOutput.value;
     romanType = romanOutput.value;
     //romanOutType.innerText = romanOutput;
@@ -75,17 +75,17 @@ function sideBySide(set1, set2) {
 }
 
 function displayType() {
-    sideBySideHide.style.display = 'none';
-    devanagariOutputHide.style.display = 'none';
-    transOutputHide.style.display = 'none';
-    combinedOutputHide.style.display = 'none';
-    const input = displayType.value;
+    document.getElementById('sideBySideHide').style.display = 'none';
+    document.getElementById('devanagariOutputHide').style.display = 'none';
+    document.getElementById('transOutputHide').style.display = 'none';
+    document.getElementById('combinedOutputHide').style.display = 'none';
+    const input = document.getElementById('displayType').value;
     if (input === "double") {
-        devanagariOutputHide.style.display = "block";
-        transOutputHide.style.display = "block";
+        document.getElementById('devanagariOutputHide').style.display = "block";
+        document.getElementById('transOutputHide').style.display = "block";
     }
     console.log(input);
-    input.style.display = "block";
+    document.getElementById(input).style.display = "block";
 }
 
 async function copyText(divId) {

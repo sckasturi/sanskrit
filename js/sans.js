@@ -85,7 +85,7 @@
                 skip: [''],
 
                 // Vedic accent. Udatta and anudatta.
-                accent: ['\u0951', '\u0952'],
+                accent: ['\u0951', '\u0952', '\ue008'],
 
                 // Accent combined with anusvara and and visarga. For compatibility
                 // with ITRANS, which allows the reverse of these four.
@@ -221,7 +221,8 @@
                 other_marks: ['ṃ', 'ḥ', '~'],
                 virama: [''],
                 consonants: 'k kh g gh ṅ c ch j jh ñ ṭ ṭh ḍ ḍh ṇ t th d dh n p ph b bh m y r l v ś ṣ s h ḻ kṣ jñ'.split(' '),
-                symbols: "0 1 2 3 4 5 6 7 8 9 oṃ ' । ॥".split(' ')
+                symbols: "0 1 2 3 4 5 6 7 8 9 oṃ ' । ॥".split(' '),
+                accent: ['\u0951', '\u0952', '\ue008']
             },
 
             /* ITRANS
@@ -241,7 +242,7 @@
                 candra: ['.c'],
                 zwj: ['{}'],
                 skip: '_',
-                accent: ["\\'", "\\_"],
+                accent: ["\\'", "\\_", "\\@"],
                 combo_accent: "\\'H \\_H \\'M \\_M".split(' '),
                 other: 'q K G z .D .Dh f Y R'.split(' ')
             },
@@ -716,7 +717,7 @@
         if (from === 'itrans') {
             data = data.replace(/\{\\m\+\}/g, ".h.N");
             data = data.replace(/\.h/g, '');
-            data = data.replace(/\\([^'`_]|$)/g, "##$1##");
+            data = data.replace(/\\([^'`_@]|$)/g, "##$1##");
         }
 
         var alldata = '';
