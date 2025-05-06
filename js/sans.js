@@ -222,7 +222,7 @@
                 virama: [''],
                 consonants: 'k kh g gh ṅ c ch j jh ñ ṭ ṭh ḍ ḍh ṇ t th d dh n p ph b bh m y r l v ś ṣ s h ḻ kṣ jñ'.split(' '),
                 symbols: "0 1 2 3 4 5 6 7 8 9 oṃ ' । ॥".split(' '),
-                accent: ['\u0951', '\u0952', '\ue008']
+                accent: ['\ue007', '\ue009', '\ue008']
             },
 
             /* ITRANS
