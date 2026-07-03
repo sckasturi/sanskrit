@@ -1,140 +1,344 @@
-.pt-serif-regular {
-    font-family: "PT Serif", serif;
-    font-weight: 400;
-    font-style: normal;
-}
+/* ==========================================================================
+   Sanskrit Transliterator — app styles
+   ========================================================================== */
 
-.pt-serif-bold {
-    font-family: "PT Serif", serif;
-    font-weight: 700;
-    font-style: normal;
-}
-
-.pt-serif-regular-italic {
-    font-family: "PT Serif", serif;
-    font-weight: 400;
-    font-style: italic;
-}
-
-.pt-serif-bold-italic {
-    font-family: "PT Serif", serif;
-    font-weight: 700;
-    font-style: italic;
-}
-
-.pt-sans-narrow-regular {
-    font-family: "PT Sans Narrow", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-}
-
-.pt-sans-narrow-bold {
-    font-family: "PT Sans Narrow", sans-serif;
-    font-weight: 700;
-    font-style: normal;
-}
-
-.pt-sans-regular {
-    font-family: "PT Sans", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-}
-
-.pt-sans-bold {
-    font-family: "PT Sans", sans-serif;
-    font-weight: 700;
-    font-style: normal;
-}
-
-.pt-sans-regular-italic {
-    font-family: "PT Sans", sans-serif;
-    font-weight: 400;
-    font-style: italic;
-}
-
-.pt-sans-bold-italic {
-    font-family: "PT Sans", sans-serif;
-    font-weight: 700;
-    font-style: italic;
-}
-
+/* Prefers the locally installed Sanskrit 2003 (newer builds include a
+   combining candrabindu, U+0310), falling back to the bundled file.
+   app.js tests at runtime whether U+0310 actually renders and only then
+   emits m̐; otherwise the transliterator uses ṁ, so nobody sees tofu. */
 @font-face {
     font-family: 'Sanskrit';
-    src: url('../fonts/Sanskrit2003.ttf') format('truetype');
+    src: local('Sanskrit 2003'), url('../fonts/Sanskrit2003.ttf') format('truetype');
+}
+
+:root {
+    --bg: #faf7f2;
+    --panel: #ffffff;
+    --border: #e7e0d6;
+    --text: #2d2a26;
+    --muted: #8a8378;
+    --accent: #b45309;
+    --accent-dark: #8f4207;
+    --header-bg: #292420;
 }
 
 body {
-    background-color: #eee;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: "PT Sans", sans-serif;
+}
+
+/* Header
+   ========================================================================== */
+
+.topHeader {
+    background-color: var(--header-bg);
+    border-bottom: 4px solid var(--accent);
+    color: #fff;
+    padding: 20px 0 16px;
+}
+
+.topHeader h1 {
+    font-family: "PT Sans Narrow", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 1.7rem;
+    margin: 0;
+}
+
+.topHeader .subtitle {
+    color: #cfc7bc;
+    font-size: 0.9rem;
+    margin: 2px 0 0;
+}
+
+.main-content {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+/* Panels ("card" is taken by Foundation, which forces a column layout)
+   ========================================================================== */
+
+.panel {
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(45, 42, 38, 0.06);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+}
+
+.panel-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+/* Toolbar (settings row)
+   ========================================================================== */
+
+.toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+}
+
+.control {
+    flex: 1 1 160px;
+    min-width: 150px;
+}
+
+.control label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 3px;
+    line-height: 1.4;
+}
+
+.hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.control select {
+    width: 100%;
+    margin: 0;
+    padding: 7px 10px;
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.95rem;
+    color: var(--text);
+    background-color: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: auto;
+}
+
+.control select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.15);
+    outline: none;
+}
+
+/* Brief highlight when the input system is auto-detected */
+.control select.auto-switched {
+    animation: detectFlash 1.2s ease-out;
+}
+
+@keyframes detectFlash {
+    0% {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.35);
+    }
+
+    100% {
+        border-color: var(--border);
+        box-shadow: none;
+    }
+}
+
+/* Input
+   ========================================================================== */
+
+.section-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+#textInput {
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px;
+    font-family: "Sanskrit", serif;
+    font-size: 15pt;
+    line-height: 1.6;
+    color: var(--text);
+    background-color: #fffdf9;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: none;
+    resize: vertical;
+}
+
+#textInput:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.12);
+    outline: none;
+    background-color: #fff;
+}
+
+#textInput::placeholder {
+    color: var(--muted);
+    font-size: 11pt;
+}
+
+/* Outputs
+   ========================================================================== */
+
+.output {
+    min-height: 2.5em;
+    line-height: 1.8;
+    word-break: break-word;
     font-family: "Sanskrit", serif;
 }
 
-.footer {
-    text-align: center;
-    color: #ffffff;
-    background-color: #333333;
-    font-weight: 600;
+/* Drag & drop */
+#textInput.drop-active {
+    border: 2px dashed var(--accent);
+    background-color: #fdf3e7;
 }
 
-
-
-h1 {
-    text-transform: uppercase;
+/* Font download notice (only shown when m̐ is in the output) */
+.font-notice {
+    border: 1px solid #f0d9a8;
+    background-color: #fdf6e3;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--text);
 }
 
-textarea {
+.font-notice a {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.indic-text {
     font-size: 20pt;
 }
 
-.hover-text {
-    position: absolute;
-    top: 10px;
-    /* Positioning from the top */
-    right: 10px;
-    /* Positioning from the right */
-    /*background-color: rgba(0, 0, 0, 0.7); /* Optional background for readability 
-            color: white;*/
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-.devanagari {
-    font-size: 20pt;
-}
-
-.transliteration {
+.roman-text,
+#combinedOutput,
+#sideBySid {
     font-size: 16pt;
 }
 
-.topHeader {
-    background-color: #333333;
-    padding: 80px 0 0 0;
+.output-pre {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+/* Copy button
+   ========================================================================== */
+
+.copy-btn {
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 3px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.copy-btn:hover,
+.copy-btn:focus {
+    background-color: var(--accent);
+    color: #fff;
+    outline: none;
+}
+
+.copy-btn:active {
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
     color: #fff;
 }
 
-.top-bar,
-.title-bar,
-.dropdown.menu,
-.is-dropdown-submenu {
-    background-color: #add8e6;
-    color: white;
-}
-
+/* Copy success flash */
 .success-callout {
-  background-color: #fff; /* Initial color */
-  transition: background-color 1s ease-in-out;
-  animation: fadeBackground 1s; /* 3 seconds cycle, infinite loop */
+    animation: fadeBackground 1s;
 }
 
-/* Define the keyframes for the fade effect */
 @keyframes fadeBackground {
-  0% {
-    background-color: #fff; /* Start color */
-  }
-  50% {
-    background-color: rgb(230, 249, 235); /* Midway color */
-  }
-  100% {
-    background-color: #fff; /* End color (same as start) */
-  }
+    0% {
+        background-color: #fff;
+    }
+
+    50% {
+        background-color: rgb(230, 249, 235);
+    }
+
+    100% {
+        background-color: #fff;
+    }
+}
+
+/* Footer
+   ========================================================================== */
+
+.footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 12px 0 20px;
+}
+
+.footer p {
+    margin: 0;
+}
+
+/* Mobile
+   ========================================================================== */
+
+@media screen and (max-width: 639px) {
+    .topHeader {
+        padding: 14px 0 12px;
+    }
+
+    .topHeader h1 {
+        font-size: 1.35rem;
+    }
+
+    .toolbar {
+        gap: 10px;
+    }
+
+    .control {
+        flex: 1 1 45%;
+        min-width: 130px;
+    }
+
+    .indic-text {
+        font-size: 16pt;
+    }
+
+    .roman-text,
+    #combinedOutput,
+    #sideBySid {
+        font-size: 13pt;
+    }
+
+    #textInput {
+        font-size: 13pt;
+    }
 }

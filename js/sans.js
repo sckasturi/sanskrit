@@ -218,7 +218,9 @@
              */
             iast: {
                 vowels: 'a ā i ī u ū ṛ ṝ ḷ ḹ  e ai  o au'.split(' '),
-                other_marks: ['ṃ', 'ḥ', '~'],
+                // Candrabindu is rendered ṁ (precomposed, U+1E41) rather than
+                // m̐ (m + combining U+0310), which most fonts lack.
+                other_marks: ['ṃ', 'ḥ', 'ṁ'],
                 virama: [''],
                 consonants: 'k kh g gh ṅ c ch j jh ñ ṭ ṭh ḍ ḍh ṇ t th d dh n p ph b bh m y r l v ś ṣ s h ḻ kṣ jñ'.split(' '),
                 symbols: "0 1 2 3 4 5 6 7 8 9 oṃ ' । ॥".split(' '),
@@ -245,6 +247,22 @@
                 accent: ["\\'", "\\_", "\\@"],
                 combo_accent: "\\'H \\_H \\'M \\_M".split(' '),
                 other: 'q K G z .D .Dh f Y R'.split(' ')
+            },
+
+            /* Baraha
+             * ------
+             * The romanization used by the Baraha software (.brh files).
+             * Kannada-oriented; here mapped for Sanskrit use, so e/E -> ए
+             * and o/O -> ओ. Distinctive tokens: Ru (ऋ), ~g (ङ), ~j (ञ),
+             * ~M (candrabindu), Dx/Dhx (nukta ड़/ढ़).
+             */
+            baraha: {
+                vowels: 'a A i I u U Ru RU ~lu ~lU  e ai  o au'.split(' '),
+                other_marks: ['M', 'H', '~M'],
+                virama: [''],
+                consonants: 'k kh g gh ~g ch Ch j jh ~j T Th D Dh N t th d dh n p ph b bh m y r l v sh Sh s h L kSh j~j'.split(' '),
+                symbols: "0 1 2 3 4 5 6 7 8 9 OM .a | ||".split(' '),
+                other: 'kx Kx gx z Dx Dhx f yx Rx'.split(' ')
             },
 
             /* Harvard-Kyoto
@@ -336,6 +354,20 @@
                 '|': ['.'],
                 '||': ['..'],
                 z: ['J']
+            },
+            baraha: {
+                A: ['aa'],
+                I: ['ee', 'ii'],
+                U: ['oo', 'uu'],
+                e: ['E'],
+                o: ['O'],
+                ch: ['c'],
+                Ch: ['chh'],
+                Sh: ['S'],
+                v: ['w'],
+                z: ['jx'],
+                f: ['fx'],
+                OM: ['AUM']
             }
         },
 
@@ -412,7 +444,7 @@
     (function() {
         // Set up roman schemes
         var kolkata = schemes.kolkata = cheapCopy(schemes.iast),
-            schemeNames = 'iast itrans hk kolkata slp1 velthuis wx'.split(' ');
+            schemeNames = 'iast itrans baraha hk kolkata slp1 velthuis wx'.split(' ');
         kolkata.vowels = 'a ā i ī u ū ṛ ṝ ḷ ḹ e ē ai o ō au'.split(' ');
 
         // These schemes already belong to Sanscript.schemes. But by adding
@@ -711,6 +743,13 @@
                 map: map,
                 options: options,
                 to: to};
+        }
+
+        // Baraha nukta consonants (kx, gx, Dx, Dhx, ...): when the target
+        // scheme has no nukta ("other") group, fall back to the plain
+        // consonant instead of leaking the "x" modifier.
+        if (from === 'baraha' && !Sanscript.schemes[to].other) {
+            data = data.replace(/([kKgjDRyf]h?)x/g, '$1');
         }
 
         // Easy way out for "{\m+}", "\", and ".h".
