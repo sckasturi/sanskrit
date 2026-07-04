@@ -26,6 +26,52 @@ body {
     background-color: var(--bg);
     color: var(--text);
     font-family: "PT Sans", sans-serif;
+    transition: background-color 0.2s ease;
+}
+
+/* Dark mode
+   ========================================================================== */
+
+body.dark {
+    --bg: #191512;
+    --panel: #231e1a;
+    --border: #3a332c;
+    --text: #eae4da;
+    --muted: #9a917f;
+    --header-bg: #0f0c0a;
+}
+
+body.dark .control select,
+body.dark .actions select,
+body.dark #convertTo,
+body.dark .findreplace input[type="text"],
+body.dark #textInput,
+body.dark #textInput:focus {
+    background-color: var(--panel);
+    color: var(--text);
+}
+
+body.dark .font-notice {
+    background-color: #2e2517;
+    border-color: #5a4a2a;
+}
+
+body.dark mark.untranslated {
+    background-color: #4a2020;
+    color: #e8a0a0;
+}
+
+body.dark .instructions code {
+    background-color: #2e2822;
+    color: #d9a05a;
+}
+
+body.dark .success-callout {
+    animation: none;
+}
+
+body.dark #textInput.drop-active {
+    background-color: #2e2517;
 }
 
 /* Header
@@ -51,6 +97,31 @@ body {
     color: #cfc7bc;
     font-size: 0.9rem;
     margin: 2px 0 0;
+}
+
+.header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.theme-toggle {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #fff;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
 }
 
 .main-content {
@@ -317,6 +388,198 @@ body {
 
 .actions-spacer {
     flex: 1;
+}
+
+/* Find & replace (complex page)
+   ========================================================================== */
+
+.findreplace {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.findreplace .fr-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.findreplace .fr-arrow {
+    color: var(--muted);
+}
+
+.inputtools select {
+    width: auto;
+    margin: 0;
+    padding: 4px 10px;
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.85rem;
+    color: var(--text);
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: auto;
+}
+
+/* IAST palette (shown only for IAST input)
+   ========================================================================== */
+
+.iast-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.pal-key {
+    font-family: "Sanskrit", serif;
+    font-size: 1.05rem;
+    min-width: 34px;
+    padding: 3px 6px;
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.pal-key:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Presentation mode
+   ========================================================================== */
+
+.present-view {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background-color: #12100e;
+    color: #f5efe6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4vh 6vw 2vh;
+    text-align: center;
+}
+
+.pv-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3vh;
+    max-width: 1100px;
+    cursor: pointer;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.pv-dev {
+    font-family: "Sanskrit", serif;
+    font-size: clamp(28px, 5.5vw, 64px);
+    line-height: 1.6;
+}
+
+.pv-rom {
+    font-family: "Sanskrit", serif;
+    font-size: clamp(18px, 3vw, 36px);
+    line-height: 1.6;
+    color: #e0c9a0;
+}
+
+.pv-meaning {
+    font-family: "PT Sans", sans-serif;
+    font-style: italic;
+    font-size: clamp(14px, 1.6vw, 20px);
+    color: #b8af9e;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.pv-nav {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    color: #b8af9e;
+    font-size: 1rem;
+    padding-top: 2vh;
+}
+
+.pv-btn {
+    background: none;
+    border: 1px solid #5a5248;
+    border-radius: 8px;
+    color: #f5efe6;
+    padding: 0 18px;
+    font-size: 1.6rem;
+    line-height: 1.7;
+    cursor: pointer;
+}
+
+.pv-btn:hover {
+    border-color: var(--accent);
+}
+
+.pv-close {
+    position: absolute;
+    top: 14px;
+    right: 22px;
+    background: none;
+    border: none;
+    color: #b8af9e;
+    font-size: 2.2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pv-close:hover {
+    color: #fff;
+}
+
+.findreplace input[type="text"] {
+    flex: 1 1 180px;
+    margin: 0;
+    padding: 5px 10px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: auto;
+    box-shadow: none;
+}
+
+.findreplace input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.15);
+    outline: none;
+}
+
+.findreplace .fr-flag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.findreplace .fr-flag input {
+    margin: 0;
 }
 
 /* Meanings and error highlighting

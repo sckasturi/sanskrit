@@ -20,9 +20,12 @@
 
 <body>
     <header class="topHeader">
-        <div class="grid-container">
-            <h1>Sanskrit Transliterator</h1>
-            <p class="subtitle">iTrans &middot; Baraha &middot; Devanagari &middot; IAST &mdash; converts live as you type</p>
+        <div class="grid-container header-row">
+            <div>
+                <h1>Sanskrit Transliterator</h1>
+                <p class="subtitle">iTrans &middot; Baraha &middot; Devanagari &middot; IAST &mdash; converts live as you type</p>
+            </div>
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Light / dark mode">&#9790;</button>
         </div>
     </header>
 
@@ -76,6 +79,7 @@
             <label class="section-label" for="textInput">Input <span class="hint">&mdash; or drag &amp; drop a .brh / .itx / .txt file</span></label>
             <textarea id="textInput" oninput="processInput()" rows="6"
                 placeholder="Type or paste here &mdash; e.g. om namaH shivAya&#10;Use word (alternate) to send the alternate spelling to the roman output only.&#10;Start a line with &gt; to add an English meaning for the verse above."></textarea>
+            <div id="iastPalette" class="iast-palette" style="display:none"></div>
             <div class="actions">
                 <button type="button" class="copy-btn complex-only" onclick="syllabifyInput()">Syllabify</button>
                 <button type="button" class="copy-btn complex-only" onclick="saveText()">Save</button>
@@ -84,9 +88,37 @@
                 </select>
                 <button type="button" class="copy-btn complex-only" onclick="deleteSaved()">Delete</button>
                 <span class="actions-spacer"></span>
+                <button type="button" class="copy-btn complex-only" onclick="undoEdit(this)">Undo</button>
+                <span class="actions-spacer complex-only"></span>
+                <button type="button" class="copy-btn" onclick="openPresent()">Present</button>
                 <button type="button" class="copy-btn" onclick="copyShareLink(this)">Share link</button>
+                <button type="button" class="copy-btn complex-only" onclick="generateMeanings(this)">AI meanings</button>
                 <button type="button" class="copy-btn complex-only" onclick="downloadDocx()">Word (.docx)</button>
                 <button type="button" class="copy-btn complex-only" onclick="printDoc()">Print / PDF</button>
+            </div>
+            <div class="findreplace complex-only">
+                <span class="fr-title">Find &amp; replace</span>
+                <input id="findField" type="text" placeholder="Find" spellcheck="false"
+                    title="With regex on: ^ start of line, $ end of line, \| for a literal danda">
+                <span class="fr-arrow">&rarr;</span>
+                <input id="replaceField" type="text" placeholder="Replace ($1 = group)" spellcheck="false">
+                <label class="fr-flag" title="Regular expressions: ^ $ \d ( ) — note | means OR, type \| for a danda">
+                    <input type="checkbox" id="frRegex" checked> regex</label>
+                <label class="fr-flag"><input type="checkbox" id="frCase"> ignore case</label>
+                <button type="button" class="copy-btn" onclick="findReplace(this)">Replace all</button>
+            </div>
+            <div class="findreplace inputtools complex-only">
+                <span class="fr-title">Tools</span>
+                <button type="button" class="copy-btn" onclick="numberVerses(this)">Number verses</button>
+                <span class="actions-spacer"></span>
+                <label class="fr-flag" for="convertTo">Convert input to</label>
+                <select id="convertTo">
+                    <option value="baraha">Baraha</option>
+                    <option value="itrans">iTrans</option>
+                    <option value="iast">IAST</option>
+                    <option value="devanagari">Devanagari</option>
+                </select>
+                <button type="button" class="copy-btn" onclick="convertInput(this)">Convert</button>
             </div>
         </section>
 
@@ -164,6 +196,12 @@
                     Red-marked letters in the Indic output are characters that did not
                     transliterate &mdash; usually a typo.</p>
 
+                <p><strong>Reading.</strong> <em>Present</em> opens a fullscreen verse-by-verse view
+                    for leading chanting &mdash; arrow keys, space, or a click advance; Esc exits.
+                    The moon/sun button in the header switches light and dark mode. When the input
+                    system is IAST, a tap-to-insert palette of diacritics (ā ṛ ṃ ś &hellip;) appears
+                    under the input.</p>
+
                 <p class="complex-only"><strong>Saving &amp; exports.</strong> <em>Save</em> keeps
                     named texts in your browser. <em>Word (.docx)</em> and
                     <em>Print&nbsp;/&nbsp;PDF</em> export side-by-side tables (Devanagari | roman) per
@@ -171,6 +209,20 @@
                     directly into the input (kar-pU-ra-gau-raM): the Devanagari output ignores them,
                     the roman output and exports keep them, and you can edit them right in the input
                     box. Unhyphenated lines still get an automatic split at export.</p>
+
+                <p class="complex-only"><strong>Tools.</strong> <em>AI meanings</em> writes a
+                    <code>&gt;</code> meaning line for every verse that lacks one, using the Google
+                    Gemini API &mdash; you will be asked once for a free API key from
+                    aistudio.google.com, stored only in this browser. <em>Find&nbsp;&amp;&nbsp;replace</em>
+                    runs on the input; with <em>regex</em> on, <code>^</code>/<code>$</code> match line
+                    starts/ends, <code>$1</code> refers to capture groups, and since <code>|</code>
+                    means OR, type <code>\|\|</code> for a literal danda pair (or turn regex off to
+                    match plain text). <em>Undo</em> reverses Syllabify, replaces, AI meanings, file
+                    drops, and loads. <em>Number verses</em> appends <code>|| n ||</code> to every
+                    verse of two or more lines that is not yet numbered (headings are skipped).
+                    <em>Convert input to</em> rewrites the input text itself into another system
+                    &mdash; e.g. turn an iTrans file into Baraha &mdash; and switches the input
+                    selector with it.</p>
 
                 <p><strong>Vedic accents</strong> (iTrans or Baraha input) &mdash; type the mark right after the vowel:</p>
                 <table class="accent-table">
@@ -194,6 +246,16 @@
             install it.
         </div>
     </main>
+
+    <div id="presentView" class="present-view" style="display:none">
+        <button type="button" class="pv-close" onclick="closePresent()" title="Close (Esc)">&times;</button>
+        <div id="presentContent" class="pv-content" onclick="presentStep(1)"></div>
+        <div class="pv-nav">
+            <button type="button" class="pv-btn" onclick="presentStep(-1)" title="Previous (&larr;)">&#8249;</button>
+            <span id="presentCounter"></span>
+            <button type="button" class="pv-btn" onclick="presentStep(1)" title="Next (&rarr; or space)">&#8250;</button>
+        </div>
+    </div>
 
     <div id="printArea" class="print-area"></div>
 

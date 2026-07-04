@@ -174,6 +174,7 @@ function syllabifyInput() {
         alert('Syllabify works with roman input systems (iTrans, Baraha, IAST).');
         return;
     }
+    pushUndo();
     textInput.value = textInput.value.split('\n').map(function (line) {
         if (/^\s*>/.test(line)) { return line; } // meaning line
         return line.split(/(\s+)/).map(function (w) {
@@ -202,6 +203,7 @@ async function processInput() {
             htmlInputType.classList.remove('auto-switched');
             void htmlInputType.offsetWidth; // restart the animation
             htmlInputType.classList.add('auto-switched');
+            updatePalette();
         }
     }
 
@@ -236,8 +238,8 @@ async function processInput() {
         return l.meaning ? '<span class="meaning-line">' + escapeHtml(l.roman) + '</span>'
             : escapeHtml(l.roman);
     }).join('<br>');
-    combinedOutput.innerText = combineText(indicText, romanText);
-    sideBySid.innerText = sideBySide(indicText, romanText);
+    combinedOutput.innerHTML = buildCombined(lines);
+    sideBySid.innerHTML = buildSideBySide(lines);
 
     // Booklet (verse table) view.
     var vt = document.getElementById('verseTable');
@@ -281,53 +283,43 @@ function updateVariable() {
         romanLabel.innerText = romanOutput.options[romanOutput.selectedIndex].text.replace(/\s*\(.*\)/, '');
     }
 
+    updatePalette();
     processInput();
 }
 
-function combineText(set1, set2) {
-    // Split each set by newline to get arrays of lines
-    const lines1 = set1.split('\n\n');
-    const lines2 = set2.split('\n\n');
-
-    // Determine the maximum number of lines to account for unequal lengths
-    const maxLength = Math.max(lines1.length, lines2.length);
-
-    // Combine lines from both arrays
-    const combinedLines = [];
-    for (let i = 0; i < maxLength; i++) {
-        // Get line from each set, or an empty string if one set is shorter
-        const line1 = lines1[i] || "";
-        const line2 = lines2[i] || "";
-
-        // Combine the lines with a space or any desired separator
-        combinedLines.push(line1 + "\n" + line2);
-    }
-
-    // Join the combined lines back into a single string with newlines
-    return combinedLines.join('\n\n');
+/*
+ * Combined view: per verse, the Indic block, then the roman block,
+ * then the meaning once (styled), verses separated by blank lines.
+ */
+function buildCombined(lines) {
+    return groupVerses(lines).map(function (v) {
+        var parts = [];
+        if (v.rows.length) {
+            parts.push(v.rows.map(function (r) { return escapeHtml(r.indic); }).join('<br>'));
+            parts.push(v.rows.map(function (r) { return escapeHtml(r.roman); }).join('<br>'));
+        }
+        v.meanings.forEach(function (m) {
+            parts.push('<span class="meaning-line">' + escapeHtml(m) + '</span>');
+        });
+        return parts.join('<br>');
+    }).join('<br><br>');
 }
 
-function sideBySide(set1, set2) {
-    // Split each set by newline to get arrays of lines
-    const lines1 = set1.replaceAll("  ", " ").split('\n');
-    const lines2 = set2.replaceAll("  ", " ").replaceAll(" ", "  ").split('\n');
-
-    // Determine the maximum number of lines to account for unequal lengths
-    const maxLength = Math.max(lines1.length, lines2.length);
-
-    // Combine lines from both arrays
-    const combinedLines = [];
-    for (let i = 0; i < maxLength; i++) {
-        // Get line from each set, or an empty string if one set is shorter
-        const line1 = lines1[i] || "";
-        const line2 = lines2[i] || "";
-
-        // Combine the lines with a space or any desired separator
-        combinedLines.push(line1 + "\t" + line2);
-    }
-
-    // Join the combined lines back into a single string with newlines
-    return combinedLines.join('\n');
+/*
+ * Summer Camp view: Indic <tab> roman per line (roman words double
+ * spaced, for Word paste), with each meaning rendered once, spanning.
+ * Rendered inside a <pre>, so \n and \t survive.
+ */
+function buildSideBySide(lines) {
+    return lines.map(function (l) {
+        if (l.text.trim() === '') { return ''; }
+        if (l.meaning) {
+            return '<span class="meaning-line">' + escapeHtml(l.text) + '</span>';
+        }
+        var dev = l.indic.replace(/ {2,}/g, ' ');
+        var rom = l.roman.replace(/ {2,}/g, ' ').replace(/ /g, '  ');
+        return escapeHtml(dev) + '\t' + escapeHtml(rom);
+    }).join('\n');
 }
 
 function displayType() {
@@ -346,10 +338,20 @@ function displayType() {
 }
 
 async function copyText(divId) {
-    // innerText keeps line breaks and drops the highlight markup.
+    // Plain flavor: innerText keeps line breaks/tabs, drops the markup.
     const div = document.getElementById(divId);
     const textToCopy = div.innerText;
-    var html = `<span style="font-family: Sanskrit2003; font-size: 16pt">${textToCopy}</span>`;
+
+    // HTML flavor for Word: drop the error highlights, keep meanings as
+    // italic, keep line breaks, and preserve tabs (Summer Camp) using
+    // Word's mso-tab-count convention.
+    var htmlBody = div.innerHTML
+        .replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '')
+        .replace(/<span class="meaning-line">/g, '<i style="font-size: 11pt; font-family: Calibri, sans-serif">')
+        .replace(/<\/span>/g, '</i>')
+        .replace(/\t/g, '<span style=\'mso-tab-count:1\'>\t</span>')
+        .replace(/\n/g, '<br>');
+    var html = `<span style="font-family: Sanskrit2003; font-size: 16pt">${htmlBody}</span>`;
     const clipboardItem = new ClipboardItem({
         "text/html": new Blob([html], {
             type: "text/html"
@@ -442,6 +444,7 @@ function setupDropZone() {
             var text = String(reader.result);
             // Strip directive lines like <columns=2> found in Baraha files.
             text = text.replace(/^[ \t]*<[^>\n]*>[ \t]*\r?\n?/gm, '');
+            pushUndo();
             zone.value = text;
 
             if (ext === 'brh') {
@@ -500,6 +503,7 @@ function loadSaved() {
     var sel = document.getElementById('savedTexts');
     var entry = getSavedTexts()[sel.value];
     if (!entry) { return; }
+    pushUndo();
     applyState(entry);
 }
 
@@ -561,6 +565,327 @@ function initState() {
 }
 
 /*
+ * Undo for programmatic edits of the input (find/replace, Syllabify,
+ * AI meanings, file drops, loading a saved text). The browser's own
+ * Ctrl+Z still covers ordinary typing.
+ */
+var undoStack = [];
+
+function pushUndo() {
+    undoStack.push(textInput.value);
+    if (undoStack.length > 50) { undoStack.shift(); }
+}
+
+function undoEdit(btn) {
+    if (!undoStack.length) {
+        if (btn) {
+            var old = btn.innerText;
+            btn.innerText = 'Nothing to undo';
+            setTimeout(function () { btn.innerText = old; }, 1200);
+        }
+        return;
+    }
+    textInput.value = undoStack.pop();
+    processInput();
+}
+
+/*
+ * Find & replace over the input. With "regex" on, full syntax with
+ * g+m flags (so ^ and $ anchor per line; note | is alternation, so a
+ * literal danda is \|). With it off, plain literal text.
+ */
+function findReplace(btn) {
+    var find = document.getElementById('findField').value;
+    if (!find) { return; }
+    var isRegex = document.getElementById('frRegex').checked;
+    var pattern = isRegex ? find : find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var flags = 'gm' + (document.getElementById('frCase').checked ? 'i' : '');
+    var re;
+    try {
+        re = new RegExp(pattern, flags);
+    } catch (e) {
+        alert('Invalid pattern: ' + e.message);
+        return;
+    }
+    var repl = document.getElementById('replaceField').value;
+    if (!isRegex) { repl = repl.replace(/\$/g, '$$$$'); } // keep $ literal
+    var count = (textInput.value.match(re) || []).length;
+    if (count > 0) {
+        pushUndo();
+        textInput.value = textInput.value.replace(re, repl);
+        processInput();
+    }
+    var old = btn.innerText;
+    btn.innerText = count + ' replaced';
+    setTimeout(function () { btn.innerText = old; }, 1400);
+}
+
+/*
+ * AI meaning generation (complex page). Calls the Google Gemini API
+ * directly from the browser with a user-supplied key (kept in
+ * localStorage only), and inserts a "> meaning" line after every verse
+ * that lacks one. Free keys: aistudio.google.com.
+ */
+var AI_MODEL = 'gemini-2.5-flash';
+
+function getGeminiKey(forceAsk) {
+    var k = localStorage.getItem('sanskrit:geminiKey');
+    if (!k || forceAsk) {
+        k = prompt('Paste your Google AI Studio (Gemini) API key.\nGet one free at aistudio.google.com. It is stored only in this browser and sent only to Google.');
+        if (!k) { return null; }
+        k = k.trim();
+        try { localStorage.setItem('sanskrit:geminiKey', k); } catch (e) {}
+    }
+    return k;
+}
+
+function generateMeanings(btn) {
+    // Group raw input lines into verses, remembering where each ends.
+    var rawLines = textInput.value.split('\n');
+    var verses = [], cur = null;
+    rawLines.forEach(function (line, i) {
+        if (line.trim() === '') { cur = null; return; }
+        if (!cur) { cur = { rows: [], hasMeaning: false, endIdx: i }; verses.push(cur); }
+        if (/^\s*>/.test(line)) { cur.hasMeaning = true; } else { cur.rows.push(line); }
+        cur.endIdx = i;
+    });
+    var targets = verses.filter(function (v) { return !v.hasMeaning && v.rows.length; });
+    if (!targets.length) {
+        alert(rawLines.join('').trim() === '' ? 'Type or import a text first.' : 'Every verse already has a meaning.');
+        return;
+    }
+    var key = getGeminiKey(false);
+    if (!key) { return; }
+
+    // Send the verses in IAST, which reads unambiguously.
+    var romanScheme = Sanscript.isRomanScheme(inputType) || inputType === 'devanagari' ? inputType : 'itrans';
+    var numbered = targets.map(function (v, i) {
+        return (i + 1) + '. ' + Sanscript.t(stripParenAlternates(v.rows.join(' / ')), romanScheme, 'iast');
+    }).join('\n');
+
+    var old = btn.innerText;
+    btn.innerText = 'Generating…';
+    btn.disabled = true;
+    function done() { btn.innerText = old; btn.disabled = false; }
+
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/' + AI_MODEL + ':generateContent', {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'x-goog-api-key': key
+        },
+        body: JSON.stringify({
+            contents: [{
+                parts: [{
+                    text: 'These are numbered Sanskrit/Hindi verses from a Hindu prayer, in IAST '
+                        + 'transliteration ("/" separates lines of the same verse). For each verse, write '
+                        + 'one short English meaning (1-2 sentences) in the devotional style of prayer '
+                        + 'booklets, e.g. "I bow to Lord Śiva, who is as bright as camphor, the embodiment '
+                        + 'of compassion." Skip headings like dohā/caupāī with an empty string. '
+                        + 'Return ONLY a JSON array of strings, one per verse, in order.\n\n' + numbered
+                }]
+            }],
+            generationConfig: { responseMimeType: 'application/json' }
+        })
+    }).then(function (r) {
+        if (r.status === 400 || r.status === 401 || r.status === 403) {
+            localStorage.removeItem('sanskrit:geminiKey');
+            throw new Error('The API key was rejected - click AI meanings again to enter a new one.');
+        }
+        if (!r.ok) { return r.json().then(function (e) { throw new Error((e.error && e.error.message) || ('HTTP ' + r.status)); }); }
+        return r.json();
+    }).then(function (data) {
+        var text = data.candidates[0].content.parts[0].text
+            .replace(/^\s*```(?:json)?/, '').replace(/```\s*$/, '').trim();
+        var meanings = JSON.parse(text);
+        if (!Array.isArray(meanings) || meanings.length !== targets.length) {
+            throw new Error('Unexpected response shape - try again.');
+        }
+        pushUndo();
+        // Insert bottom-up so earlier indices stay valid.
+        for (var i = targets.length - 1; i >= 0; i--) {
+            var m = String(meanings[i] || '').trim();
+            if (m) { rawLines.splice(targets[i].endIdx + 1, 0, '> ' + m); }
+        }
+        textInput.value = rawLines.join('\n');
+        processInput();
+        done();
+    }).catch(function (err) {
+        done();
+        alert('Meaning generation failed: ' + err.message);
+    });
+}
+
+/*
+ * Dark mode: follows the system preference until the user chooses,
+ * then remembers the choice.
+ */
+function initTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('sanskrit:theme'); } catch (e) {}
+    var dark = saved ? saved === 'dark'
+        : !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.body.classList.toggle('dark', dark);
+    updateThemeButton();
+}
+
+function toggleTheme() {
+    var dark = !document.body.classList.contains('dark');
+    document.body.classList.toggle('dark', dark);
+    try { localStorage.setItem('sanskrit:theme', dark ? 'dark' : 'light'); } catch (e) {}
+    updateThemeButton();
+}
+
+function updateThemeButton() {
+    var b = document.getElementById('themeToggle');
+    if (b) { b.innerHTML = document.body.classList.contains('dark') ? '&#9788;' : '&#9790;'; }
+}
+
+/*
+ * Presentation mode: fullscreen, one verse at a time, for leading
+ * chanting. Arrows / space / click advance; Esc closes.
+ */
+var presentIdx = 0, presentVerses = [];
+
+function openPresent() {
+    presentVerses = groupVerses(lastLines).filter(function (v) { return v.rows.length; });
+    if (!presentVerses.length) {
+        alert('Type or import a text first.');
+        return;
+    }
+    presentIdx = 0;
+    document.getElementById('presentView').style.display = 'flex';
+    renderPresent();
+    document.addEventListener('keydown', presentKeys);
+    var pv = document.getElementById('presentView');
+    if (pv.requestFullscreen) { pv.requestFullscreen().catch(function () {}); }
+}
+
+function closePresent() {
+    document.getElementById('presentView').style.display = 'none';
+    document.removeEventListener('keydown', presentKeys);
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(function () {});
+    }
+}
+
+function presentKeys(e) {
+    if (e.key === 'Escape') { closePresent(); }
+    else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); presentStep(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); presentStep(-1); }
+}
+
+function presentStep(d) {
+    presentIdx = Math.min(Math.max(presentIdx + d, 0), presentVerses.length - 1);
+    renderPresent();
+}
+
+function renderPresent() {
+    var v = presentVerses[presentIdx];
+    var html = '<div class="pv-dev">' + v.rows.map(function (r) { return escapeHtml(r.indic); }).join('<br>') + '</div>'
+        + '<div class="pv-rom">' + v.rows.map(function (r) { return escapeHtml(r.roman); }).join('<br>') + '</div>';
+    if (v.meanings.length) {
+        html += '<div class="pv-meaning">' + v.meanings.map(escapeHtml).join('<br>') + '</div>';
+    }
+    document.getElementById('presentContent').innerHTML = html;
+    document.getElementById('presentCounter').innerText = (presentIdx + 1) + ' / ' + presentVerses.length;
+}
+
+/*
+ * IAST character palette: one-click diacritics, shown only when the
+ * input system is IAST. Inserts at the cursor.
+ */
+var IAST_CHARS = 'ā ī ū ṛ ṝ ḷ ḹ ṃ ḥ ṁ ṅ ñ ṭ ḍ ṇ ś ṣ ।'.split(' ');
+
+function buildPalette() {
+    var pal = document.getElementById('iastPalette');
+    if (!pal) { return; }
+    pal.innerHTML = IAST_CHARS.map(function (c) {
+        return '<button type="button" class="pal-key" onclick="insertChar(\'' + c + '\')">' + c + '</button>';
+    }).join('');
+}
+
+function insertChar(c) {
+    textInput.setRangeText(c, textInput.selectionStart, textInput.selectionEnd, 'end');
+    textInput.focus();
+    processInput();
+}
+
+function updatePalette() {
+    var pal = document.getElementById('iastPalette');
+    if (pal) { pal.style.display = inputType === 'iast' ? 'flex' : 'none'; }
+}
+
+/*
+ * Number verses: appends "|| n ||" (or "॥ n ॥" for Devanagari input)
+ * to the last line of every verse of two or more lines, skipping
+ * verses that already carry a number. Undo-able.
+ */
+function toDevaDigits(n) {
+    return String(n).replace(/[0-9]/g, function (d) { return '०१२३४५६७८९'[+d]; });
+}
+
+function numberVerses(btn) {
+    var before = textInput.value;
+    var rawLines = before.split('\n');
+    var verses = [], cur = null;
+    rawLines.forEach(function (line, i) {
+        if (line.trim() === '') { cur = null; return; }
+        if (!cur) { cur = { rowIdx: [], text: '' }; verses.push(cur); }
+        if (!/^\s*>/.test(line)) { cur.rowIdx.push(i); cur.text += line + ' '; }
+    });
+    var deva = inputType === 'devanagari';
+    var numRe = /\|\|\s*[0-9०-९]+\s*\|\||॥\s*[0-9०-९]+\s*॥/;
+    var n = 0, changed = 0;
+    verses.forEach(function (v) {
+        if (v.rowIdx.length < 2) { return; }   // headings stay unnumbered
+        n++;
+        if (numRe.test(v.text)) { return; }    // keeps the sequence in sync
+        var li = v.rowIdx[v.rowIdx.length - 1];
+        rawLines[li] = rawLines[li].replace(/\s+$/, '') + ' '
+            + (deva ? '॥ ' + toDevaDigits(n) + ' ॥' : '|| ' + n + ' ||');
+        changed++;
+    });
+    if (changed) {
+        undoStack.push(before);
+        if (undoStack.length > 50) { undoStack.shift(); }
+        textInput.value = rawLines.join('\n');
+        processInput();
+    }
+    var old = btn.innerText;
+    btn.innerText = changed + ' numbered';
+    setTimeout(function () { btn.innerText = old; }, 1400);
+}
+
+/*
+ * Convert the input text itself into another system (e.g. an iTrans
+ * file into Baraha), switching the input-system select along with it.
+ * Meaning lines are left alone. Undo-able.
+ */
+function convertInput(btn) {
+    var to = document.getElementById('convertTo').value;
+    if (to === inputType) {
+        var old0 = btn.innerText;
+        btn.innerText = 'Already ' + to;
+        setTimeout(function () { btn.innerText = old0; }, 1200);
+        return;
+    }
+    pushUndo();
+    textInput.value = textInput.value.split('\n').map(function (line) {
+        if (/^\s*>/.test(line)) { return line; }
+        return Sanscript.t(line, inputType, to);
+    }).join('\n');
+    inputType = to;
+    autoDetect = false;
+    htmlInputType.value = to;
+    htmlInputType.classList.remove('auto-switched');
+    void htmlInputType.offsetWidth;
+    htmlInputType.classList.add('auto-switched');
+    updatePalette();
+    processInput();
+}
+
+/*
  * Complex mode. The main page keeps the interface simple; the /complex
  * page (a path-adjusted copy of index.html) additionally shows the
  * power features: Syllabify, Word (.docx), Print/PDF, Booklet Table.
@@ -583,6 +908,9 @@ function applyComplexMode() {
 
 // Scripts are loaded with `defer`, so the DOM is ready here.
 applyComplexMode();
+initTheme();
+buildPalette();
 setupDropZone();
 initCandrabinduSupport();
 initState();
+updatePalette();

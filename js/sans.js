@@ -783,9 +783,11 @@
                 .replace(/~\$/g, '\x03')
                 .replace(/\^\^/g, '\u200C');
             // Nukta consonants (kx, gx, Dx, ...): when the target scheme has
-            // no nukta ("other") group, fall back to the plain consonant
-            // instead of leaking the "x" modifier.
-            if (!Sanscript.schemes[to].other) {
+            // no nukta letters (no "other" group, or blank slots as in
+            // Telugu), fall back to the plain consonant instead of leaking
+            // the "x" modifier.
+            var toOtherB = Sanscript.schemes[to].other;
+            if (!toOtherB || !toOtherB[4] || !toOtherB[5]) {
                 data = data.replace(/([kKgjDPyr]h?)x/g, '$1');
             }
         }
@@ -795,6 +797,14 @@
             data = data.replace(/\{\\m\+\}/g, ".h.N");
             data = data.replace(/\.h/g, '');
             data = data.replace(/\\([^'`_@]|$)/g, "##$1##");
+            // Nukta consonants .D/.Dh (ड़/ढ़): when the target scheme has
+            // no nukta letters (no "other" group, or blank slots as in
+            // Telugu), fall back to the plain consonant, so pa.Dhai gives
+            // पढ़ै in Devanagari AND paḍhai in IAST.
+            var toOther = Sanscript.schemes[to].other;
+            if (!toOther || !toOther[4] || !toOther[5]) {
+                data = data.replace(/\.D(h?)/g, 'D$1');
+            }
         }
 
         var alldata = '';
