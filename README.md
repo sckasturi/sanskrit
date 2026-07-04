@@ -6,8 +6,8 @@ Inspired by [this tool](https://www.learnsanskrit.org/tools/sanscript/) from lea
 
 ## Pages
 
-- `/` — the simple transliterator (input, outputs, save/share).
-- `/complex` — everything, plus the power features: Syllabify, Word (.docx) export, Print/PDF, Booklet Table view.
+- `/` — the simple transliterator (input, outputs, share links).
+- `/complex` — everything, plus the power features: Syllabify, saved texts, Word (.docx) export, Print/PDF, Booklet Table view.
 
 `complex/index.html` is a generated copy of `index.html` with `../`-prefixed asset paths; the feature gating itself lives in `js/app.js` (elements marked `complex-only` are removed unless the URL path ends in `/complex`). After editing `index.html`, regenerate the copy:
 

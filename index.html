@@ -78,11 +78,11 @@
                 placeholder="Type or paste here &mdash; e.g. om namaH shivAya&#10;Use word (alternate) to send the alternate spelling to the roman output only.&#10;Start a line with &gt; to add an English meaning for the verse above."></textarea>
             <div class="actions">
                 <button type="button" class="copy-btn complex-only" onclick="syllabifyInput()">Syllabify</button>
-                <button type="button" class="copy-btn" onclick="saveText()">Save</button>
-                <select id="savedTexts" onchange="loadSaved()">
+                <button type="button" class="copy-btn complex-only" onclick="saveText()">Save</button>
+                <select id="savedTexts" class="complex-only" onchange="loadSaved()">
                     <option value="">Saved texts&hellip;</option>
                 </select>
-                <button type="button" class="copy-btn" onclick="deleteSaved()">Delete</button>
+                <button type="button" class="copy-btn complex-only" onclick="deleteSaved()">Delete</button>
                 <span class="actions-spacer"></span>
                 <button type="button" class="copy-btn" onclick="copyShareLink(this)">Share link</button>
                 <button type="button" class="copy-btn complex-only" onclick="downloadDocx()">Word (.docx)</button>
@@ -159,12 +159,13 @@
                     every view and become the meaning paragraph in Word/print exports. Verses are
                     separated by blank lines.</p>
 
-                <p><strong>Saving &amp; sharing.</strong> <em>Save</em> keeps named texts in your browser;
-                    your last session is restored automatically. <em>Share link</em> copies a URL that
-                    opens with the current text and settings. Red-marked letters in the Indic output
-                    are characters that did not transliterate &mdash; usually a typo.</p>
+                <p><strong>Sharing.</strong> <em>Share link</em> copies a URL that opens with the
+                    current text and settings; your last session is restored automatically.
+                    Red-marked letters in the Indic output are characters that did not
+                    transliterate &mdash; usually a typo.</p>
 
-                <p class="complex-only"><strong>Exports.</strong> <em>Word (.docx)</em> and
+                <p class="complex-only"><strong>Saving &amp; exports.</strong> <em>Save</em> keeps
+                    named texts in your browser. <em>Word (.docx)</em> and
                     <em>Print&nbsp;/&nbsp;PDF</em> export side-by-side tables (Devanagari | roman) per
                     verse, with meanings spanning below. <em>Syllabify</em> inserts syllable hyphens
                     directly into the input (kar-pU-ra-gau-raM): the Devanagari output ignores them,
