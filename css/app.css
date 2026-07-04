@@ -293,6 +293,203 @@ body {
     }
 }
 
+/* Actions bar (save / share / export)
+   ========================================================================== */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.actions select {
+    width: auto;
+    margin: 0;
+    padding: 4px 10px;
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: auto;
+}
+
+.actions-spacer {
+    flex: 1;
+}
+
+/* Meanings and error highlighting
+   ========================================================================== */
+
+.meaning-line {
+    font-family: "PT Sans", sans-serif;
+    font-style: italic;
+    font-size: 0.65em;
+    color: var(--muted);
+}
+
+mark.untranslated {
+    background-color: #fbe3e3;
+    color: #a13c3c;
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+/* Booklet (verse table) view
+   ========================================================================== */
+
+.verse-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.verse-table td {
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    vertical-align: top;
+    background: none;
+}
+
+.verse-table .verse-dev {
+    font-family: "Sanskrit", serif;
+    font-size: 18pt;
+    line-height: 1.7;
+    width: 50%;
+}
+
+.verse-table .verse-rom {
+    font-family: "Sanskrit", serif;
+    font-size: 14pt;
+    line-height: 1.7;
+}
+
+.verse-table .verse-meaning {
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--muted);
+}
+
+/* Print / PDF
+   ========================================================================== */
+
+.print-area {
+    display: none;
+}
+
+@media print {
+    body.printing .topHeader,
+    body.printing .main-content,
+    body.printing .footer {
+        display: none !important;
+    }
+
+    body.printing .print-area {
+        display: block;
+    }
+}
+
+.print-area .p-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12pt;
+    page-break-inside: avoid;
+}
+
+.print-area .p-table td {
+    border: 1px solid #bfbfbf;
+    padding: 5pt 8pt;
+    vertical-align: top;
+}
+
+.print-area .p-dev {
+    font-family: "Sanskrit", serif;
+    font-size: 20pt;
+    line-height: 1.5;
+    width: 50%;
+}
+
+.print-area .p-rom {
+    font-family: "Sanskrit", serif;
+    font-size: 16pt;
+    line-height: 1.5;
+}
+
+.print-area .p-meaning {
+    font-family: "PT Sans", sans-serif;
+    font-size: 11pt;
+}
+
+/* Instructions
+   ========================================================================== */
+
+.instructions summary {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.instructions summary:hover {
+    color: var(--accent);
+}
+
+.instructions-body {
+    padding-top: 10px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.instructions-body p {
+    margin-bottom: 0.7rem;
+}
+
+.instructions code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85em;
+    background-color: #f4efe7;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--accent-dark);
+}
+
+.instructions .example {
+    font-family: "Sanskrit", serif;
+    font-size: 1.15em;
+}
+
+.accent-table {
+    width: auto;
+    margin: 0.4rem 0 0.7rem;
+    border-collapse: collapse;
+}
+
+.accent-table th,
+.accent-table td {
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    text-align: left;
+    font-size: 0.9rem;
+    background: none;
+}
+
+.accent-table th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+.fine-print {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
 /* Footer
    ========================================================================== */
 
@@ -305,6 +502,15 @@ body {
 
 .footer p {
     margin: 0;
+}
+
+.footer .credits {
+    margin-top: 2px;
+    font-size: 0.8rem;
+}
+
+.footer a {
+    color: var(--accent);
 }
 
 /* Mobile

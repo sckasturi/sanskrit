@@ -251,18 +251,27 @@
 
             /* Baraha
              * ------
-             * The romanization used by the Baraha software (.brh files).
-             * Kannada-oriented; here mapped for Sanskrit use, so e/E -> ए
-             * and o/O -> ओ. Distinctive tokens: Ru (ऋ), ~g (ङ), ~j (ञ),
-             * ~M (candrabindu), Dx/Dhx (nukta ड़/ढ़).
+             * The Devanagari phonetic keyboard used by the Baraha software
+             * (.brh files), per baraha.com/help/Keyboards/dev-phonetic.htm.
+             * E/O are the short vowels (ऎ/ऒ), e/o the long ones (ए/ओ).
+             * Distinctive tokens: Ru (ऋ), ~g (ङ), ~j (ञ), ~M (candrabindu),
+             * S (श), & (avagraha), oum (ॐ, handled in Sanscript.t),
+             * consonant+x for nukta (Dx = ड़), ^ for ZWJ.
+             * Not supported (no slot in the target schemes): ऩ (nx),
+             * ऴ (Lx), ऑ (~o), ₹ (Rs).
              */
             baraha: {
-                vowels: 'a A i I u U Ru RU ~lu ~lU  e ai  o au'.split(' '),
+                vowels: 'a A i I u U Ru RU ~lu ~lU E e ai O o au'.split(' '),
                 other_marks: ['M', 'H', '~M'],
                 virama: [''],
                 consonants: 'k kh g gh ~g ch Ch j jh ~j T Th D Dh N t th d dh n p ph b bh m y r l v sh Sh s h L kSh j~j'.split(' '),
-                symbols: "0 1 2 3 4 5 6 7 8 9 OM .a | ||".split(' '),
-                other: 'kx Kx gx z Dx Dhx f yx Rx'.split(' ')
+                symbols: "0 1 2 3 4 5 6 7 8 9 OM & | ||".split(' '),
+                candra: ['~e'],
+                zwj: ['^'],
+                // Vedic accents use the same notation as ITRANS.
+                accent: ["\\'", "\\_", "\\@"],
+                combo_accent: "\\'H \\_H \\'M \\_M".split(' '),
+                other: 'kx Kx gx z Dx Dhx f yx rx'.split(' ')
             },
 
             /* Harvard-Kyoto
@@ -357,22 +366,33 @@
             },
             baraha: {
                 A: ['aa'],
-                I: ['ee', 'ii'],
-                U: ['oo', 'uu'],
-                e: ['E'],
-                o: ['O'],
+                I: ['ee'],
+                U: ['oo'],
+                au: ['ou'],
+                kh: ['K'],
+                gh: ['G'],
                 ch: ['c'],
-                Ch: ['chh'],
-                Sh: ['S'],
+                Ch: ['C'],
+                jh: ['J'],
+                ph: ['P'],
+                bh: ['B'],
+                sh: ['S'],
                 v: ['w'],
+                h: ['~h'],
+                '~e': ['~a'],
                 z: ['jx'],
-                f: ['fx'],
+                f: ['Px'],
+                yx: ['Y'],
                 OM: ['AUM']
             }
         },
 
     // object cache
         cache = {};
+
+    // Expose the alternates so tooling (e.g. the input syllabifier)
+    // can tokenize text exactly the way the transliterator does.
+    Sanscript.alternates = allAlternates;
 
     /**
      * Check whether the given scheme encodes romanized Sanskrit.
@@ -515,6 +535,14 @@
 
                         for (j = 0; j < numAlts; j++) {
                             consonants[alts[j]] = T;
+                        }
+                    }
+                    // The candra sign (ॅ) combines with a preceding
+                    // consonant like a vowel mark (k~e -> कॅ, not क्ॅ).
+                    if (group === 'candra') {
+                        marks[F] = T;
+                        for (j = 0; j < numAlts; j++) {
+                            marks[alts[j]] = T;
                         }
                     }
                 }
@@ -745,11 +773,21 @@
                 to: to};
         }
 
-        // Baraha nukta consonants (kx, gx, Dx, Dhx, ...): when the target
-        // scheme has no nukta ("other") group, fall back to the plain
-        // consonant instead of leaking the "x" modifier.
-        if (from === 'baraha' && !Sanscript.schemes[to].other) {
-            data = data.replace(/([kKgjDRyf]h?)x/g, '$1');
+        // Baraha specials (per baraha.com dev-phonetic):
+        // oum -> ॐ when standalone (so words like "soumya" keep s+ou+m),
+        // ~~/~#/~$ escape the literal characters, ^^ is a ZWNJ.
+        if (from === 'baraha') {
+            data = data.replace(/(^|[^A-Za-z])oum(?=$|[^A-Za-z])/g, '$1OM')
+                .replace(/~~/g, '\x01')
+                .replace(/~#/g, '\x02')
+                .replace(/~\$/g, '\x03')
+                .replace(/\^\^/g, '\u200C');
+            // Nukta consonants (kx, gx, Dx, ...): when the target scheme has
+            // no nukta ("other") group, fall back to the plain consonant
+            // instead of leaking the "x" modifier.
+            if (!Sanscript.schemes[to].other) {
+                data = data.replace(/([kKgjDPyr]h?)x/g, '$1');
+            }
         }
 
         // Easy way out for "{\m+}", "\", and ".h".
@@ -766,11 +804,13 @@
             alldata = transliterateBrahmic(data, map, options);
         }
 
-        // Fix any remaining quotations for Vedic Accents
-        if (to === 'devanagari' && options.enableSanskritVedicAccents === true) {
-            //alldata = alldata.replace('\\"', "\u1CDA").replace('"', "\u1CDA").replace('&quot;', "\u1CDA");
-            alldata = alldata.replace(/\\?"/g, "\u1CDA");
-        } else if (! (to === "itrans" || to == "iast")) {
+        // Fix any remaining quotations for Vedic Accents.
+        // The double svarita renders via the Sanskrit 2003 PUA glyph U+E008
+        // in both Devanagari and IAST (matching that font; U+1CDA has no
+        // glyph there). Other scripts drop it; itrans keeps the literal ".
+        if ((to === 'devanagari' && options.enableSanskritVedicAccents === true) || to === 'iast') {
+            alldata = alldata.replace(/\\?"/g, "\uE008");
+        } else if (to !== 'itrans') {
             alldata = alldata.replace(/\\?"/g, "");
         }
 
@@ -782,6 +822,14 @@
             alldata = alldata
                 .replace(/(^|\s+)(த|ந்|தை)/g,"$1ந$2")
                 .replace(/([^\s])ந/g, "$1ன")
+        }
+
+        // Restore Baraha escapes; drop unmapped ZWJ markers.
+        if (from === 'baraha') {
+            alldata = alldata.replace(/\x01/g, '~').replace(/\x02/g, '#').replace(/\x03/g, '$');
+            if (!Sanscript.schemes[to].zwj) {
+                alldata = alldata.replace(/\^/g, '');
+            }
         }
         return alldata;
     };

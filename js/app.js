@@ -121,13 +121,80 @@ function applyParenAlternates(text) {
     return out + text.slice(last);
 }
 
+function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/*
+ * Meanings: a line starting with ">" is an English meaning for the verse
+ * above it. It is never transliterated and flows through to all views
+ * and exports as-is.
+ */
+function parseLines(input) {
+    return input.split('\n').map(function (line) {
+        var mm = line.match(/^\s*>\s?(.*)$/);
+        return mm ? { meaning: true, text: mm[1] } : { meaning: false, text: line };
+    });
+}
+
+// Group lines into verses (separated by blank lines) for the booklet
+// table view and the Word/print exports.
+function groupVerses(lines) {
+    var verses = [], cur = null;
+    lines.forEach(function (l) {
+        if (l.text.trim() === '') { cur = null; return; }
+        if (!cur) { cur = { rows: [], meanings: [] }; verses.push(cur); }
+        if (l.meaning) { cur.meanings.push(l.text); } else { cur.rows.push(l); }
+    });
+    return verses;
+}
+
+// Wrap untransliterated leftovers (ASCII letters in Indic output are
+// usually typos) so they stand out.
+function highlightUntranslated(raw) {
+    return raw.replace(/[A-Za-z\\^~]+|[^A-Za-z\\^~]+/g, function (seg) {
+        var esc = escapeHtml(seg);
+        return /^[A-Za-z\\^~]/.test(seg)
+            ? '<mark class="untranslated" title="Not transliterated: check the spelling or input system">' + esc + '</mark>'
+            : esc;
+    });
+}
+
+var lastLines = []; // most recent parsed+transliterated lines, for exports
+
+/*
+ * Syllabify the input text in place: inserts hyphens at syllable
+ * boundaries using the current input system's own tokens. Hyphens are
+ * ignored by the Indic output and flow through to the roman output,
+ * so they can be edited right in the input box. Running it again
+ * re-splits from scratch (existing hyphens are recomputed).
+ */
+function syllabifyInput() {
+    if (!Sanscript.isRomanScheme(inputType)) {
+        alert('Syllabify works with roman input systems (iTrans, Baraha, IAST).');
+        return;
+    }
+    textInput.value = textInput.value.split('\n').map(function (line) {
+        if (/^\s*>/.test(line)) { return line; } // meaning line
+        return line.split(/(\s+)/).map(function (w) {
+            return /^\s*$/.test(w) ? w : syllabifyInputWord(w, inputType);
+        }).join('');
+    }).join('\n');
+    processInput();
+}
+
 async function processInput() {
     const input = textInput.value;
+
+    var lines = parseLines(input);
+    var verseSource = lines.filter(function (l) { return !l.meaning; })
+        .map(function (l) { return l.text; }).join('\n');
 
     if (input.trim() === '') {
         autoDetect = true;
     } else if (autoDetect) {
-        var detected = detectInputType(input);
+        // Detect from verse lines only; English meanings would look like IAST.
+        var detected = detectInputType(verseSource);
         if (detected && detected !== inputType) {
             inputType = detected;
             htmlInputType.value = detected;
@@ -138,25 +205,58 @@ async function processInput() {
         }
     }
 
-    var indicOutput = Sanscript.t(stripParenAlternates(input).replaceAll("-", ""), inputType, indicType).trim();
-    var romanOutput = Sanscript.t(applyParenAlternates(input), inputType, romanType).trim()
+    lines.forEach(function (l) {
+        if (l.meaning) { l.indic = l.text; l.roman = l.text; return; }
+        l.indic = Sanscript.t(stripParenAlternates(l.text).replaceAll("-", ""), inputType, indicType);
+        var r = Sanscript.t(applyParenAlternates(l.text), inputType, romanType);
+        // Upgrade to the true candrabindu glyph only when the font renders it.
+        if (candrabinduOK && romanType === 'iast') {
+            r = r.replaceAll("ṁ", CANDRABINDU);
+        }
+        l.roman = r;
+    });
+    lastLines = lines;
 
-    // Upgrade ṁ to the true candrabindu glyph only when the font renders it.
-    if (candrabinduOK && romanType === 'iast') {
-        romanOutput = romanOutput.replaceAll("ṁ", CANDRABINDU);
-    }
+    var indicText = lines.map(function (l) { return l.indic; }).join('\n').trim();
+    var romanText = lines.map(function (l) { return l.roman; }).join('\n').trim();
+
+    // Candrabindu (U+F141) and the Vedic accent glyphs (U+E007-U+E009) are
+    // Sanskrit 2003 PUA characters; warn readers when either is present
+    // in either script (the double svarita U+E008 appears in both).
     var fontNotice = document.getElementById('fontNotice');
     if (fontNotice) {
-        fontNotice.style.display = romanOutput.indexOf(CANDRABINDU) !== -1 ? 'block' : 'none';
+        fontNotice.style.display = /[\uE007-\uE009\uF141]/.test(romanText + indicText) ? 'block' : 'none';
     }
-    //doubleSpace = doubleSpace.value;
-    //if(doubleSpace === "yes") {
-    //romanOutput = romanOutput.replaceAll(" ", "  ");
-    //}
-    devanagariOutput.innerText = indicOutput;
-    transOutput.innerText = romanOutput;
-    combinedOutput.innerText = combineText(indicOutput, romanOutput);
-    sideBySid.innerText = sideBySide(indicOutput, romanOutput);
+
+    devanagariOutput.innerHTML = lines.map(function (l) {
+        return l.meaning ? '<span class="meaning-line">' + escapeHtml(l.indic) + '</span>'
+            : highlightUntranslated(l.indic);
+    }).join('<br>');
+    transOutput.innerHTML = lines.map(function (l) {
+        return l.meaning ? '<span class="meaning-line">' + escapeHtml(l.roman) + '</span>'
+            : escapeHtml(l.roman);
+    }).join('<br>');
+    combinedOutput.innerText = combineText(indicText, romanText);
+    sideBySid.innerText = sideBySide(indicText, romanText);
+
+    // Booklet (verse table) view.
+    var vt = document.getElementById('verseTable');
+    if (vt) {
+        vt.innerHTML = groupVerses(lines).map(function (v) {
+            var dev = v.rows.map(function (r) { return escapeHtml(r.indic); }).join('<br>');
+            var rom = v.rows.map(function (r) { return escapeHtml(r.roman); }).join('<br>');
+            var html = '<tr><td class="verse-dev">' + dev + '</td><td class="verse-rom">' + rom + '</td></tr>';
+            if (v.meanings.length) {
+                html += '<tr><td colspan="2" class="verse-meaning">' + v.meanings.map(escapeHtml).join('<br>') + '</td></tr>';
+            }
+            return html;
+        }).join('');
+    }
+
+    // Remember the session (restored on next visit).
+    try {
+        localStorage.setItem('sanskrit:last', JSON.stringify({ t: input, i: inputType, d: indicType, r: romanType }));
+    } catch (e) { /* private mode */ }
 }
 
 
@@ -178,7 +278,7 @@ function updateVariable() {
         indicLabel.innerText = indicOutput.options[indicOutput.selectedIndex].text.replace(/\s*\(.*\)/, '');
     }
     if (romanLabel) {
-        romanLabel.innerText = romanOutput.options[romanOutput.selectedIndex].text;
+        romanLabel.innerText = romanOutput.options[romanOutput.selectedIndex].text.replace(/\s*\(.*\)/, '');
     }
 
     processInput();
@@ -235,6 +335,7 @@ function displayType() {
     document.getElementById('devanagariOutputHide').style.display = 'none';
     document.getElementById('transOutputHide').style.display = 'none';
     document.getElementById('combinedOutputHide').style.display = 'none';
+    document.getElementById('verseTableHide').style.display = 'none';
     const input = document.getElementById('displayType').value;
     if (input === "double") {
         document.getElementById('devanagariOutputHide').style.display = "block";
@@ -245,10 +346,9 @@ function displayType() {
 }
 
 async function copyText(divId) {
-    // Select the text from the div
+    // innerText keeps line breaks and drops the highlight markup.
     const div = document.getElementById(divId);
-    const textToCopy = div.innerHTML.replaceAll("<br>", "\n");
-    console.log(div.innerHTML);
+    const textToCopy = div.innerText;
     var html = `<span style="font-family: Sanskrit2003; font-size: 16pt">${textToCopy}</span>`;
     const clipboardItem = new ClipboardItem({
         "text/html": new Blob([html], {
@@ -364,6 +464,125 @@ function setupDropZone() {
     });
 }
 
+/*
+ * Saved texts (localStorage) and shareable links.
+ */
+function getSavedTexts() {
+    try { return JSON.parse(localStorage.getItem('sanskrit:texts')) || {}; }
+    catch (e) { return {}; }
+}
+
+function putSavedTexts(obj) {
+    try { localStorage.setItem('sanskrit:texts', JSON.stringify(obj)); } catch (e) {}
+}
+
+function refreshSavedList(selected) {
+    var sel = document.getElementById('savedTexts');
+    if (!sel) { return; }
+    var names = Object.keys(getSavedTexts()).sort();
+    sel.innerHTML = '<option value="">Saved texts…</option>' + names.map(function (n) {
+        return '<option value="' + escapeHtml(n).replace(/"/g, '&quot;') + '">' + escapeHtml(n) + '</option>';
+    }).join('');
+    if (selected) { sel.value = selected; }
+}
+
+function saveText() {
+    var sel = document.getElementById('savedTexts');
+    var name = prompt('Name this text:', sel && sel.value ? sel.value : '');
+    if (!name) { return; }
+    var texts = getSavedTexts();
+    texts[name] = { t: textInput.value, i: inputType, d: indicType, r: romanType };
+    putSavedTexts(texts);
+    refreshSavedList(name);
+}
+
+function loadSaved() {
+    var sel = document.getElementById('savedTexts');
+    var entry = getSavedTexts()[sel.value];
+    if (!entry) { return; }
+    applyState(entry);
+}
+
+function deleteSaved() {
+    var sel = document.getElementById('savedTexts');
+    if (!sel.value) { return; }
+    if (!confirm('Delete "' + sel.value + '"?')) { return; }
+    var texts = getSavedTexts();
+    delete texts[sel.value];
+    putSavedTexts(texts);
+    refreshSavedList();
+}
+
+// Apply a {t, i, d, r} state object to the UI.
+function applyState(st) {
+    if (typeof st.t === 'string') { textInput.value = st.t; }
+    if (st.i) { htmlInputType.value = st.i; autoDetect = false; }
+    if (st.d) { indicOutput.value = st.d; }
+    if (st.r) { romanOutput.value = st.r; }
+    updateVariable();
+}
+
+// Unicode-safe base64url helpers for share links.
+function encodeState() {
+    var st = { t: textInput.value, i: inputType, d: indicType, r: romanType };
+    var b = btoa(unescape(encodeURIComponent(JSON.stringify(st))));
+    return b.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeState(hash) {
+    try {
+        var b = hash.replace(/-/g, '+').replace(/_/g, '/');
+        while (b.length % 4) { b += '='; }
+        return JSON.parse(decodeURIComponent(escape(atob(b))));
+    } catch (e) { return null; }
+}
+
+function copyShareLink(btn) {
+    var url = location.origin + location.pathname + '#s=' + encodeState();
+    history.replaceState(null, '', '#s=' + encodeState());
+    navigator.clipboard.writeText(url).then(function () {
+        var old = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(function () { btn.innerText = old; }, 1200);
+    });
+}
+
+// Restore state: a share link wins, then the previous session.
+function initState() {
+    refreshSavedList();
+    if (location.hash.indexOf('#s=') === 0) {
+        var st = decodeState(location.hash.slice(3));
+        if (st) { applyState(st); return; }
+    }
+    try {
+        var last = JSON.parse(localStorage.getItem('sanskrit:last'));
+        if (last && last.t) { applyState(last); }
+    } catch (e) { /* ignore */ }
+}
+
+/*
+ * Complex mode. The main page keeps the interface simple; the /complex
+ * page (a path-adjusted copy of index.html) additionally shows the
+ * power features: Syllabify, Word (.docx), Print/PDF, Booklet Table.
+ */
+var complexMode = /\/complex(\/|\/index\.html)?$/.test(location.pathname);
+
+function applyComplexMode() {
+    if (complexMode) {
+        document.body.classList.add('complex');
+        var sub = document.querySelector('.topHeader .subtitle');
+        if (sub) { sub.innerText += ' · complex mode'; }
+        return;
+    }
+    // Simple page: remove the complex-only controls entirely.
+    var els = document.querySelectorAll('.complex-only');
+    for (var i = els.length - 1; i >= 0; i--) {
+        els[i].parentNode.removeChild(els[i]);
+    }
+}
+
 // Scripts are loaded with `defer`, so the DOM is ready here.
+applyComplexMode();
 setupDropZone();
 initCandrabinduSupport();
+initState();
